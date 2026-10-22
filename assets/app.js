@@ -5,6 +5,11 @@
   var state = { il: null, data: null, ilce: '', pos: null };
   var KEY = 'nobetci-il';
 
+  // Android uygulamasının (APK) içinde çalışıyorsa nöbet listeleri canlı siteden çekilir.
+  var IN_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+  var DATA_BASE = IN_APP ? 'https://enskygr234.github.io/nobet-ecza/' : '';
+  if (IN_APP) document.documentElement.classList.add('in-app');
+
   var dateFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
   var timeFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
   $('today').textContent = dateFmt.format(new Date());
@@ -113,6 +118,13 @@
     state.ilce = '';
   }
 
+  function show(d) {
+    state.data = { il: d.il, updatedAt: d.updatedAt, eczaneler: d.eczaneler || [] };
+    $('sample').hidden = !d.sample;
+    fillIlce();
+    render();
+  }
+
   function loadIl(slug) {
     state.il = slug;
     state.data = null;
@@ -120,7 +132,7 @@
     $('list').textContent = '';
     $('empty').hidden = true;
     setStatus('Nöbet listesi yükleniyor…');
-    fetch('data/il/' + slug + '.json', { cache: 'no-cache' })
+    fetch(DATA_BASE + 'data/il/' + slug + '.json', { cache: 'no-cache' })
       .then(function (r) {
         if (r.status === 404) throw new Error('none');
         if (!r.ok) throw new Error('http');
@@ -128,13 +140,18 @@
       })
       .then(function (d) {
         if (state.il !== slug) return;
-        state.data = { il: d.il, updatedAt: d.updatedAt, eczaneler: d.eczaneler || [] };
-        $('sample').hidden = !d.sample;
-        fillIlce();
-        render();
+        store('liste-' + slug, JSON.stringify(d));
+        show(d);
       })
       .catch(function (e) {
         if (state.il !== slug) return;
+        var cached = null;
+        try { cached = JSON.parse(store('liste-' + slug) || 'null'); } catch (x) { cached = null; }
+        if (cached && e.message !== 'none') {
+          show(cached);
+          setStatus('İnternet yok. Son kaydedilen liste gösteriliyor, nöbet değişmiş olabilir.', true);
+          return;
+        }
         $('sample').hidden = true;
         $('ilce').textContent = '';
         $('ilce').appendChild(new Option('Tüm ilçeler', ''));
@@ -162,7 +179,7 @@
   }
 
   // Uygulama (PWA): çevrimdışı çalışma ve ana ekrana ekleme
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  if (!IN_APP && 'serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').catch(function () {});
     });

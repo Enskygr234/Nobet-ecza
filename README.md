@@ -70,3 +70,15 @@ Site aynı zamanda telefona yüklenebilen bir uygulamadır:
 - `index.html`, `assets/` veya `icons/` içindeki dosyalarda değişiklik yaptığında `sw.js` içindeki `VERSION` değerini artır (`v1` → `v2`), yüklü uygulamalar yeni sürümü alsın.
 
 Play Store'a koymak istersen aynı kod Capacitor ile Android uygulamasına paketlenebilir.
+
+## Android APK
+
+`.github/workflows/apk.yml` site dosyaları her değiştiğinde APK'yı otomatik derler ve şu adrese koyar:
+
+https://github.com/Enskygr234/nobet-ecza/releases/latest/download/nobetci-eczane.apk
+
+Sitedeki "APK indir" butonu da bu adrese gider. Uygulama nöbet listesini canlı siteden çeker; günlük veri güncellemesi için APK'yı yeniden derlemek gerekmez. İnternet yokken son açılan liste gösterilir.
+
+**İmza anahtarı:** Anahtar tanımlı değilse APK, her derlemede değişen geçici (debug) bir anahtarla imzalanır. Bu durumda yeni sürümü kurmak için eskisini silmek gerekebilir. Kalıcı anahtar için iki secret ekle:
+`ANDROID_KEYSTORE_BASE64` (keystore dosyasının base64 hali, alias `nobetci`) ve `ANDROID_KEYSTORE_PASSWORD`.
+Play Store'a koymak için de bu kalıcı anahtar gerekir.

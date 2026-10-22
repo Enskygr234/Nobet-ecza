@@ -1,0 +1,137 @@
+name: Android APK oluştur
+
+# Site dosyaları değişince APK yeniden derlenir ve
+# https://github.com/Enskygr234/nobet-ecza/releases/latest/download/nobetci-eczane.apk
+# adresine konur. Günlük nöbet verisi güncellemeleri APK'yı yeniden derlemez
+# (uygulama nöbet listesini canlı siteden çeker).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "assets/**"
+      - "icons/**"
+      - "android-res/**"
+      - "data/iller.json"
+      - ".github/workflows/apk.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      APP_ID: io.github.enskygr234.nobetecza
+      APP_NAME: Nöbetçi Eczane
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Capacitor projesini hazırla
+        run: |
+          mkdir -p app/www/data app/www/assets app/www/icons
+          cp index.html manifest.webmanifest app/www/
+          cp -r assets/. app/www/assets/
+          cp -r icons/. app/www/icons/
+          cp data/iller.json app/www/data/
+          cd app
+          cat > package.json <<'JSON'
+          {
+            "name": "nobetci-eczane-app",
+            "private": true,
+            "version": "1.0.0",
+            "dependencies": {
+              "@capacitor/android": "6.2.0",
+              "@capacitor/cli": "6.2.0",
+              "@capacitor/core": "6.2.0"
+            }
+          }
+          JSON
+          cat > capacitor.config.json <<JSON
+          {
+            "appId": "${APP_ID}",
+            "appName": "${APP_NAME}",
+            "webDir": "www",
+            "android": { "allowMixedContent": false }
+          }
+          JSON
+          npm install --no-audit --no-fund
+          npx cap add android
+
+      - name: İkon, izinler ve sürüm numarası
+        working-directory: app/android
+        run: |
+          # İkonlar
+          rm -rf app/src/main/res/mipmap-anydpi-v26
+          for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
+            cp ../../android-res/mipmap-$d/*.png app/src/main/res/mipmap-$d/
+          done
+          # Konum izni ("Yakınımdakiler" için)
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n</manifest>#' app/src/main/AndroidManifest.xml
+          # Her derlemede sürüm numarası artsın ki güncelleme eskisinin üstüne kurulsun
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/" app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" app/build.gradle
+          cd .. && npx cap sync android
+
+      - name: İmza anahtarı (varsa)
+        id: sign
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$KEYSTORE_PASS" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "mode=release" >> "$GITHUB_OUTPUT"
+          else
+            echo "İmza anahtarı yok, debug APK derlenecek."
+            echo "mode=debug" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: APK derle
+        working-directory: app/android
+        env:
+          KEYSTORE_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          chmod +x gradlew
+          if [ "${{ steps.sign.outputs.mode }}" = "release" ]; then
+            ./gradlew assembleRelease --no-daemon \
+              -Pandroid.injected.signing.store.file="$RUNNER_TEMP/release.jks" \
+              -Pandroid.injected.signing.store.password="$KEYSTORE_PASS" \
+              -Pandroid.injected.signing.key.alias=nobetci \
+              -Pandroid.injected.signing.key.password="$KEYSTORE_PASS"
+            cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/nobetci-eczane.apk"
+          else
+            ./gradlew assembleDebug --no-daemon
+            cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/nobetci-eczane.apk"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nobetci-eczane-apk
+          path: nobetci-eczane.apk
+
+      - name: İndirme linkine koy (Releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete apk --yes --cleanup-tag || true
+          gh release create apk nobetci-eczane.apk \
+            --target "${{ github.sha }}" \
+            --title "Nöbetçi Eczane Android 1.0.${{ github.run_number }}" \
+            --notes "Telefonuna indirip aç, \"Yükle\"ye dokun. Telefon izin isterse bu kaynaktan yüklemeye izin ver." \
+            --latest

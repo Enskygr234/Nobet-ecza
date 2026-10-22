@@ -112,6 +112,17 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 .empty h2 { margin: 0 0 6px; color: var(--ink); font: 800 22px var(--font-display); }
 .empty p { margin: 0; }
 
+/* APK download */
+.apk {
+  margin-top: 32px; padding: 20px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px;
+}
+.apk > div { flex: 1 1 300px; min-width: 0; }
+.apk h2 { margin: 0 0 4px; font: 800 18px var(--font-display); }
+.apk p { margin: 0; color: var(--ink-2); font-size: 15px; max-width: 60ch; }
+.btn.apk-btn { background: var(--ink); color: var(--bg); }
+.in-app .apk, .in-app .btn.install { display: none !important; }
+
 /* Info */
 .info {
   margin-block: 32px 40px; padding: 20px; border-radius: 16px; border: 1px dashed var(--line);
