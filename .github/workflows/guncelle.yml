@@ -1,0 +1,54 @@
+name: Nöbet listesini güncelle
+
+on:
+  schedule:
+    - cron: "47 5 * * *"    # 08:47 (Türkiye saati)
+    - cron: "47 14 * * *"   # 17:47 (Türkiye saati)
+  workflow_dispatch:
+    inputs:
+      test_il:
+        description: "Sadece test için il (örn. istanbul). Boş bırakırsan 81 il çekilir."
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nobet-guncelle
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Test (tek il, dosya yazmaz)
+        if: ${{ github.event.inputs.test_il != '' && github.event.inputs.test_il != null }}
+        run: node scripts/fetch.mjs --test "${{ github.event.inputs.test_il }}"
+        env:
+          NOBETECZA_KEY: ${{ secrets.NOBETECZA_KEY }}
+
+      - name: 81 ili çek
+        if: ${{ github.event.inputs.test_il == '' || github.event.inputs.test_il == null }}
+        run: node scripts/fetch.mjs
+        env:
+          NOBETECZA_KEY: ${{ secrets.NOBETECZA_KEY }}
+
+      - name: Değişiklik varsa kaydet
+        if: ${{ github.event.inputs.test_il == '' || github.event.inputs.test_il == null }}
+        run: |
+          if [ -z "$(git status --porcelain data/il)" ]; then
+            echo "Değişiklik yok."
+            exit 0
+          fi
+          git config user.name "nobet-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/il
+          git commit -m "Nöbet listesi güncellendi"
+          git push

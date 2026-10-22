@@ -1,0 +1,16 @@
+{
+  "url": "https://api.nobetecza.com/v1/nobetci",
+  "ilParam": "il",
+  "auth": { "type": "header", "name": "Authorization", "prefix": "Bearer " },
+  "delayMs": 800,
+  "timeoutMs": 20000,
+  "fields": {
+    "ad": "",
+    "ilce": "",
+    "adres": "",
+    "telefon": "",
+    "lat": "",
+    "lng": "",
+    "tarif": ""
+  }
+}

@@ -1,0 +1,129 @@
+/* Layout: red masthead with the pharmacy "E" sign, a finder panel, then a single column of pharmacy cards
+   (two columns on wide screens). Built to be read fast, at night, on a phone. */
+:root {
+  --bg: #F6F4F2;
+  --surface: #FFFFFF;
+  --ink: #1A1416;
+  --ink-2: #5E5558;
+  --line: #E4DEDC;
+  --red: #B3122B;
+  --red-ink: #FFFFFF;
+  --red-soft: #FBE8EA;
+  --red-text: #9B0F25;
+  --mast: #B3122B;
+  --mast-ink: #FFFFFF;
+  --focus: #1A1416;
+
+  --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121012; --surface: #1C191B; --ink: #F3EFEF; --ink-2: #B3AAAD; --line: #322C2F;
+    --red: #E2475D; --red-ink: #160A0D; --red-soft: #3A1A20; --red-text: #FF9AA8;
+    --mast: #6E0B1B; --mast-ink: #FFFFFF; --focus: #F3EFEF;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121012; --surface: #1C191B; --ink: #F3EFEF; --ink-2: #B3AAAD; --line: #322C2F;
+  --red: #E2475D; --red-ink: #160A0D; --red-soft: #3A1A20; --red-text: #FF9AA8;
+  --mast: #6E0B1B; --mast-ink: #FFFFFF; --focus: #F3EFEF;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 17px/1.5 var(--font-body); -webkit-font-smoothing: antialiased; }
+a { color: var(--red-text); }
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.wrap {
+  max-width: 1080px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Masthead */
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--mast); }
+.masthead { background: var(--mast); color: var(--mast-ink); }
+.masthead-in { display: flex; align-items: center; gap: 14px; padding-block: 14px; }
+.sign {
+  width: 46px; height: 46px; flex: none; border-radius: 8px;
+  background: var(--mast-ink); color: var(--mast);
+  display: inline-flex; align-items: center; justify-content: center;
+  font: 800 34px/1 var(--font-display); font-stretch: 112%;
+}
+.brand { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.btn.install { min-height: 44px; padding: 0 14px; background: var(--mast-ink); color: var(--mast); font-size: 15px; flex: none; }
+.brand-name { font: 800 22px/1.1 var(--font-display); font-stretch: 112%; letter-spacing: -.01em; }
+.brand-sub { font-size: 14px; opacity: .85; }
+
+/* Finder */
+.finder { display: flex; flex-direction: column; gap: 14px; padding-block: 28px 18px; }
+.finder h1 {
+  margin: 0; font: 800 clamp(28px, 6vw, 46px)/1.05 var(--font-display); font-stretch: 108%;
+  letter-spacing: -.02em; text-wrap: balance;
+}
+.finder-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.field.grow { flex: 1 1 200px; }
+.field span { font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); }
+.field select {
+  height: 52px; width: 100%; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: 700 17px var(--font-body); padding: 0 12px;
+}
+.status { margin: 0; color: var(--ink-2); font-size: 15px; font-variant-numeric: tabular-nums; }
+.status.err { color: var(--red-text); font-weight: 700; }
+.sample { margin: 0; background: var(--red-soft); color: var(--red-text); border-radius: 12px; padding: 12px 14px; font-weight: 700; font-size: 15px; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 52px; padding: 0 18px; border-radius: 12px; border: 1px solid transparent;
+  font: 700 16px var(--font-body); text-decoration: none; cursor: pointer;
+}
+.btn.near { background: var(--ink); color: var(--bg); flex: 1 1 180px; }
+.btn.near[aria-pressed="true"] { background: var(--red); color: var(--red-ink); }
+.btn.call { background: var(--red); color: var(--red-ink); flex: 1 1 auto; font-variant-numeric: tabular-nums; }
+.btn.route { background: transparent; color: var(--ink); border-color: var(--line); flex: 1 1 auto; }
+.btn.call:hover { filter: brightness(1.08); }
+.btn.route:hover { border-color: var(--ink-2); }
+.btn[aria-disabled="true"] { opacity: .45; pointer-events: none; }
+
+/* List */
+.list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+.pharmacy {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.ph-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ph-name { margin: 0; font: 800 21px/1.2 var(--font-display); font-stretch: 104%; min-width: 0; overflow-wrap: anywhere; }
+.ph-dist {
+  flex: none; background: var(--red-soft); color: var(--red-text); border-radius: 999px;
+  padding: 4px 10px; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums;
+}
+.ph-district { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--red-text); }
+.ph-addr { margin: 0; color: var(--ink); overflow-wrap: anywhere; }
+.ph-note { margin: 0; color: var(--ink-2); font-size: 15px; }
+.ph-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+
+.empty { text-align: center; padding-block: 40px; color: var(--ink-2); }
+.empty h2 { margin: 0 0 6px; color: var(--ink); font: 800 22px var(--font-display); }
+.empty p { margin: 0; }
+
+/* Info */
+.info {
+  margin-block: 32px 40px; padding: 20px; border-radius: 16px; border: 1px dashed var(--line);
+}
+.info h2 { margin: 0 0 8px; font: 800 18px var(--font-display); }
+.info ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); max-width: 70ch; }
+.info strong { color: var(--red-text); }
+
+.footer { border-top: 1px solid var(--line); color: var(--ink-2); font-size: 14px; }
+.footer .wrap { padding-block: 22px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .pharmacy { animation: rise .25s ease both; }
+  @keyframes rise { from { transform: translateY(6px); } to { transform: none; } }
+}
