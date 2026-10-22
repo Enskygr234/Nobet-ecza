@@ -1,6 +1,6 @@
 // Çevrimdışı çalışma: sayfa dosyaları önbellekten, nöbet listeleri önce internetten gelir.
 // Sayfa dosyalarını değiştirdiğinde VERSION değerini artır, uygulamalar yeni sürümü alsın.
-var VERSION = 'v2';
+var VERSION = 'v3';
 var SHELL = 'shell-' + VERSION;
 var DATA = 'data';
 var FILES = [

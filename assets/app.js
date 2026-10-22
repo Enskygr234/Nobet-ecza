@@ -7,7 +7,7 @@
 
   // Android uygulamasının (APK) içinde çalışıyorsa nöbet listeleri canlı siteden çekilir.
   var IN_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-  var DATA_BASE = IN_APP ? 'https://enskygr234.github.io/nobet-ecza/' : '';
+  var DATA_BASE = IN_APP ? 'https://enskygr234.github.io/Nobet-ecza/' : '';
   if (IN_APP) document.documentElement.classList.add('in-app');
 
   var dateFmt = new Intl.DateTimeFormat('tr-TR', { weekday: 'long', day: 'numeric', month: 'long' });
