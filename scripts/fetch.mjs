@@ -17,6 +17,12 @@ import path from 'node:path';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// GitHub Actions'ta mesajı, API'den de okunabilen bir not (annotation) olarak da yazar.
+const esc = (s) => String(s).slice(0, 6000).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+function note(kind, title, text) {
+  if (process.env.GITHUB_ACTIONS) console.log(`::${kind} title=${title}::${esc(text)}`);
+}
+
 // API alan adları bilinmediği için yaygın adları sırayla dener.
 // config/api.json → fields içine bir ad yazılırsa önce o kullanılır ("konum.lat" gibi iç içe yol da olur).
 const CANDIDATES = {
@@ -123,7 +129,7 @@ async function callApi(cfg, key, ilSlug) {
 
 async function main() {
   const key = process.env.NOBETECZA_KEY;
-  if (!key) { console.error('NOBETECZA_KEY tanımlı değil (GitHub → Settings → Secrets → Actions).'); process.exit(1); }
+  if (!key) { console.error('NOBETECZA_KEY tanımlı değil (GitHub → Settings → Secrets → Actions).'); note('error', 'Anahtar', 'NOBETECZA_KEY tanimli degil'); process.exit(1); }
 
   const cfg = JSON.parse(await readFile(path.join(root, 'config', 'api.json'), 'utf8'));
   const iller = JSON.parse(await readFile(path.join(root, 'data', 'iller.json'), 'utf8'));
@@ -132,12 +138,16 @@ async function main() {
   if (ti > -1) {
     const slug = process.argv[ti + 1] || 'istanbul';
     const body = await callApi(cfg, key, slug);
-    console.log('--- Ham cevabın başı ---\n' + JSON.stringify(body, null, 2).slice(0, 1500));
+    const raw = JSON.stringify(body, null, 1).slice(0, 2500);
+    console.log('--- Ham cevabın başı ---\n' + raw);
+    note('notice', 'Ham cevap', raw);
     const list = findList(body);
-    if (!list) { console.error('Cevapta eczane listesi bulunamadı.'); process.exit(1); }
+    if (!list) { note('error', 'Test', 'Cevapta eczane listesi bulunamadı.'); console.error('Cevapta eczane listesi bulunamadı.'); process.exit(1); }
     const map = detectFields(list[0] || {}, cfg.fields);
+    const first = normalize(list, map).slice(0, 2);
     console.log('--- Bulunan alanlar ---\n', map);
-    console.log('--- İlk 2 kayıt (sitede görünecek hali) ---\n', normalize(list, map).slice(0, 2));
+    console.log('--- İlk 2 kayıt (sitede görünecek hali) ---\n', first);
+    note('notice', 'Sonuc', 'Kayit sayisi: ' + list.length + '\nAlanlar: ' + JSON.stringify(map) + '\nIlk kayitlar: ' + JSON.stringify(first));
     return;
   }
 
@@ -163,6 +173,7 @@ async function main() {
     } catch (e) {
       fail++;
       console.error(`✗ ${il.ad}: ${e.message}`); // eski dosya yerinde kalır
+      if (fail <= 3) note('warning', il.ad, e.message);
     }
     await sleep(cfg.delayMs ?? 800);
   }
@@ -173,5 +184,5 @@ async function main() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().catch((e) => { console.error('Hata: ' + e.message); process.exitCode = 1; });
+  main().catch((e) => { console.error('Hata: ' + e.message); note('error', 'Hata', e.message); process.exitCode = 1; });
 }
