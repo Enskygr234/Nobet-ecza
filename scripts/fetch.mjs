@@ -136,7 +136,7 @@ async function callApi(cfg, key, ilSlug) {
 
 // Hız sınırına (429) takılınca bekleyip tekrar dener
 async function callWithRetry(cfg, key, slug) {
-  const waits = [20000, 45000, 90000];
+  const waits = [30000, 60000];
   for (let i = 0; ; i++) {
     try {
       return await callApi(cfg, key, slug);
@@ -200,6 +200,12 @@ async function main() {
       fail++;
       console.error(`✗ ${il.ad}: ${e.message}`); // eski dosya yerinde kalır
       if (fail <= 3) note('warning', il.ad, e.message);
+      if (e.rateLimited) {
+        // Beklemeye rağmen sınır kalkmadıysa kota dolmuştur: kalan illeri boşuna deneme
+        note('warning', 'Kota', il.ad + ' ilinde durduruldu. API istek sınırı dolmuş olabilir; kalan illerin eski listeleri korunuyor.');
+        console.error('Hız sınırı kalkmadı, çekim durduruldu.');
+        break;
+      }
     }
     await sleep(cfg.delayMs ?? 800);
   }
