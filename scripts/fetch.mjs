@@ -120,10 +120,32 @@ async function callApi(cfg, key, ilSlug) {
   try {
     const res = await fetch(u, { headers, signal: ctrl.signal });
     const text = await res.text();
+    if (res.status === 429) {
+      const ra = parseInt(res.headers.get('retry-after') || '', 10);
+      const err = new Error(`HTTP 429: ${text.slice(0, 200)}`);
+      err.retryAfter = isFinite(ra) && ra > 0 ? ra * 1000 : 0;
+      err.rateLimited = true;
+      throw err;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
     try { return JSON.parse(text); } catch { throw new Error('Cevap JSON değil: ' + text.slice(0, 200)); }
   } finally {
     clearTimeout(t);
+  }
+}
+
+// Hız sınırına (429) takılınca bekleyip tekrar dener
+async function callWithRetry(cfg, key, slug) {
+  const waits = [20000, 45000, 90000];
+  for (let i = 0; ; i++) {
+    try {
+      return await callApi(cfg, key, slug);
+    } catch (e) {
+      if (!e.rateLimited || i >= waits.length) throw e;
+      const w = Math.max(e.retryAfter || 0, waits[i]);
+      console.log(`  ${slug}: hız sınırı, ${Math.round(w / 1000)} sn bekleniyor…`);
+      await sleep(w);
+    }
   }
 }
 
@@ -161,7 +183,7 @@ async function main() {
 
   for (const il of iller) {
     try {
-      const body = await callApi(cfg, key, il.slug);
+      const body = await callWithRetry(cfg, key, il.slug);
       const list = findList(body);
       if (!list) throw new Error('eczane listesi bulunamadı');
       if (!map && list.length) map = detectFields(list[0], cfg.fields);

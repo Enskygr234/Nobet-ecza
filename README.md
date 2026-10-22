@@ -38,7 +38,7 @@ NöbetEcza API  →  GitHub Actions (günde 2 kez)  →  data/il/<il>.json  → 
 
 ## Güncelleme saatleri
 
-`.github/workflows/guncelle.yml` dosyası her gün 08:47 ve 17:47'de (Türkiye saati) çalışır. 81 il, iller arasında 0,8 saniye beklenerek çekilir; yani her çalıştırma 81 istek yapar. API'nin günlük istek sınırı varsa saatleri ona göre ayarla.
+`.github/workflows/guncelle.yml` dosyası her gün 08:47 ve 17:47'de (Türkiye saati) çalışır. 81 il, iller arasında 2 saniye beklenerek çekilir (hız sınırına takılırsa bekleyip tekrar dener); yani her çalıştırma 81 istek yapar. API'nin günlük istek sınırı varsa saatleri ona göre ayarla.
 
 ## Dosyalar
 

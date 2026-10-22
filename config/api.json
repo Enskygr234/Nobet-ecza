@@ -1,8 +1,12 @@
 {
   "url": "https://api.nobetecza.com/v1/nobetci",
   "ilParam": "il",
-  "auth": { "type": "header", "name": "X-API-Key", "prefix": "" },
-  "delayMs": 800,
+  "auth": {
+    "type": "header",
+    "name": "X-API-Key",
+    "prefix": ""
+  },
+  "delayMs": 2000,
   "timeoutMs": 20000,
   "fields": {
     "ad": "",
