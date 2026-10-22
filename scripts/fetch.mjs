@@ -128,7 +128,10 @@ async function callApi(cfg, key, ilSlug) {
 }
 
 async function main() {
-  const key = process.env.NOBETECZA_KEY;
+  // Yapıştırırken araya girmiş boşluk, tırnak veya "X-API-Key:" yazısını temizle
+  const key = String(process.env.NOBETECZA_KEY || '')
+    .replace(/^\s*(x-api-key\s*:)?\s*/i, '')
+    .replace(/["'\s]/g, '');
   if (!key) { console.error('NOBETECZA_KEY tanımlı değil (GitHub → Settings → Secrets → Actions).'); note('error', 'Anahtar', 'NOBETECZA_KEY tanimli degil'); process.exit(1); }
 
   const cfg = JSON.parse(await readFile(path.join(root, 'config', 'api.json'), 'utf8'));
@@ -137,6 +140,7 @@ async function main() {
 
   if (ti > -1) {
     const slug = process.argv[ti + 1] || 'istanbul';
+    note('notice', 'Anahtar', 'Uzunluk: ' + key.length + ', baslangic: ' + key.slice(0, 5) + '..., bitis: ...' + key.slice(-4));
     const body = await callApi(cfg, key, slug);
     const raw = JSON.stringify(body, null, 1).slice(0, 2500);
     console.log('--- Ham cevabın başı ---\n' + raw);
