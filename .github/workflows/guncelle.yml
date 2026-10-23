@@ -21,6 +21,8 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    env:
+      SITE_TOKEN: ${{ secrets.SITE_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -50,5 +52,22 @@ jobs:
           git config user.name "nobet-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/il
+          git commit -m "Nöbet listesi güncellendi"
+          git push
+
+      # Winterdeveloper sitesine (Enskygr234.github.io) güncel veriyi gönder.
+      # SITE_TOKEN: Enskygr234.github.io reposuna "Contents: Read and write" izni olan
+      # fine-grained token. Yoksa bu adım atlanır.
+      - name: Veriyi Winterdeveloper sitesine gönder
+        if: ${{ (github.event.inputs.test_il == '' || github.event.inputs.test_il == null) && env.SITE_TOKEN != '' }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${SITE_TOKEN}@github.com/Enskygr234/Enskygr234.github.io.git" site
+          mkdir -p site/Nobet-ecza/data
+          rm -rf site/Nobet-ecza/data/il && cp -r data/il site/Nobet-ecza/data/il
+          cd site
+          if [ -z "$(git status --porcelain)" ]; then echo "Sitede değişiklik yok."; exit 0; fi
+          git config user.name "nobet-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Nobet-ecza/data/il
           git commit -m "Nöbet listesi güncellendi"
           git push
